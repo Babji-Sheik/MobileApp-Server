@@ -19,10 +19,10 @@ def get_user_by_username(username: str):
         .from_("users")
         .select("*")
         .eq("username", username)
-        .single()
+        .maybe_single()       # ← handle 0 or 1 rows without error
         .execute()
     )
-    return res.data if not res.error else None
+    return res.data  # will be `None` if no user, or the user dict
 
 def create_user(user_in):
     hashed = pwd_ctx.hash(user_in.password)
