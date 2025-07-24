@@ -4,7 +4,7 @@ save_data_on_exit = True
 save_history = True
 save_non_project_files = False
 project_type = 'empty-project-type'
-recent_files = ['app\\auth.py', 'app\\main.py', 'app\\crud.py', 'requirements.txt', 'app\\database.py', 'app\\__init__.py', 'app\\models.py', 'app\\schemas.py', '.env']
+recent_files = ['app\\main.py', 'app\\crud.py', 'app\\schemas.py', 'app\\models.py', '.gitignore', '.env', 'app\\database.py']
 
 [main]
 version = 0.2.0
