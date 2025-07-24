@@ -5,25 +5,37 @@ Created on Wed Jul 23 16:58:00 2025
 @author: sheik
 """
 
+# app/auth.py
+
+from .supabase_client import supabase
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from .models import User
-from .database import SessionLocal
+from datetime import datetime, timedelta
+import os, jwt
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-fallback-secret")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-# Hash a password
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
-
-# Verify a password against its hash
-def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
-
-# Authenticate user by username/password
-def authenticate_user(db: Session, username: str, password: str):
-    user = db.query(User).filter(User.username == username).first()
-    if not user or not verify_password(password, user.password_hash):
+def authenticate_user(username: str, password: str):
+    res = (
+        supabase
+        .from_("users")
+        .select("id, username, password_hash")
+        .eq("username", username)
+        .single()
+        .execute()
+    )
+    if res.error or not res.data:
         return None
-    return user
+    user = res.data
+    if not pwd_ctx.verify(password, user["password_hash"]):
+        return None
+    return {"id": user["id"], "username": user["username"]}
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

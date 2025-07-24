@@ -5,38 +5,55 @@ Created on Wed Jul 23 16:57:55 2025
 @author: sheik
 """
 
-from sqlalchemy.orm import Session
-from fastapi import HTTPException
-from . import models, schemas
-from .auth import get_password_hash, authenticate_user
+# app/crud.py
 
-# Create a new user
-def create_user(db: Session, user: schemas.UserCreate):
-    if db.query(models.User).filter(models.User.username == user.username).first():
-        raise HTTPException(status_code=400, detail="Username already registered")
-    hashed = get_password_hash(user.password)
-    db_user = models.User(
-        username=user.username,
-        password_hash=hashed
+from .supabase_client import supabase
+from passlib.context import CryptContext
+from .schemas import UserCreate, MessageCreate
+
+pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def get_user_by_username(username: str):
+    res = (
+        supabase
+        .from_("users")
+        .select("*")
+        .eq("username", username)
+        .single()
+        .execute()
     )
-    db.add(db_user)
-    db.commit()
-    db.refresh(db_user)
-    return db_user
+    return res.data if not res.error else None
 
-# Fetch messages for a user
-def get_messages_for_user(db: Session, user_id: int):
-    return db.query(models.Message).filter(models.Message.to_id == user_id).all()
+def create_user(user_in: UserCreate):
+    hashed = pwd_ctx.hash(user_in.password)
+    payload = {
+        "username": user_in.username,
+        "password_hash": hashed,
+        # add any other UserCreate fields here
+    }
+    res = supabase.from_("users").insert(payload).execute()
+    if res.error:
+        raise Exception(res.error.message)
+    return res.data[0]
 
-# Create & store a new message
-def create_message(db: Session, from_user_id: int, msg: schemas.MessageCreate):
-    db_msg = models.Message(
-        from_id=from_user_id,
-        to_id=msg.to_id,
-        payload=msg.payload,
-        nonce=msg.nonce
+def get_messages_for_user(user_id: int):
+    res = (
+        supabase
+        .from_("messages")
+        .select("*")
+        .eq("to_id", user_id)
+        .execute()
     )
-    db.add(db_msg)
-    db.commit()
-    db.refresh(db_msg)
-    return db_msg
+    return res.data
+
+def create_message(from_user_id: int, msg: MessageCreate):
+    payload = {
+        "from_id": from_user_id,
+        "to_id": msg.to_id,
+        "payload": msg.payload,
+        "nonce": msg.nonce,
+    }
+    res = supabase.from_("messages").insert(payload).execute()
+    if res.error:
+        raise Exception(res.error.message)
+    return res.data[0]
