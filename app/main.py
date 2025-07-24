@@ -8,16 +8,17 @@ Created on Wed Jul 23 16:57:21 2025
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from . import database, models, schemas, crud, auth
+from . import database, schemas, crud, auth
 
-from sqlalchemy import create_engine
+
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],          # ← allow all origins
+    allow_credentials=True,       # if you use cookies/auth headers
+    allow_methods=["*"],          # allow GET, POST, PUT, DELETE…
+    allow_headers=["*"],          # allow any headers
 )
 
 def get_db():
