@@ -22,6 +22,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
@@ -32,13 +33,13 @@ def signup(user: schemas.UserCreate):
         raise HTTPException(400, "Username already registered")
     return crud.create_user(user)
 
-@app.post("/login", response_model=schemas.Token)
+@app.post("/login", response_model=schemas.UserOut)
 def login(creds: schemas.UserLogin):
     user = auth.authenticate_user(creds.username, creds.password)
     if not user:
         raise HTTPException(401, "Authentication failed")
-    token = auth.create_access_token({"sub": user["username"]})
-    return {"access_token": token, "token_type": "bearer"}
+    return user
+
 
 @app.post("/messages/fetch", response_model=list[schemas.MessageOut])
 def fetch_messages(msg: schemas.UserLogin):

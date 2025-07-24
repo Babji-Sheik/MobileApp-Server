@@ -7,18 +7,15 @@ Created on Wed Jul 23 16:58:00 2025
 
 # app/auth.py
 
+# app/auth.py
+
 from .supabase_client import supabase
 from passlib.context import CryptContext
-from fastapi import HTTPException
-from datetime import datetime, timedelta
-import os, jwt
 
 pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
-SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-fallback-secret")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 def authenticate_user(username: str, password: str):
+    # call via the HTTP API
     res = (
         supabase
         .from_("users")
@@ -27,15 +24,15 @@ def authenticate_user(username: str, password: str):
         .single()
         .execute()
     )
-    if res.error or not res.data:
+
+    # if no data came back, user not found
+    if not res.data:
         return None
+
     user = res.data
+    # verify the password hash
     if not pwd_ctx.verify(password, user["password_hash"]):
         return None
-    return {"id": user["id"], "username": user["username"]}
 
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    # return only the bits your routes need
+    return {"id": user["id"], "username": user["username"]}
