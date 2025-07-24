@@ -7,13 +7,13 @@ Created on Wed Jul 23 16:57:21 2025
 
 # app/main.py
 
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from . import schemas, crud, auth
 
 app = FastAPI()
 
-# CORS — you can keep the wildcard if you’re not using cookies
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,35 +22,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
 @app.post("/signup", response_model=schemas.UserOut)
 def signup(user: schemas.UserCreate):
+    # Check for existing username
     if crud.get_user_by_username(user.username):
-        raise HTTPException(400, "Username already registered")
+        raise HTTPException(status_code=400, detail="Username already registered")
+    # Create new user
     return crud.create_user(user)
 
 @app.post("/login", response_model=schemas.UserOut)
 def login(creds: schemas.UserLogin):
     user = auth.authenticate_user(creds.username, creds.password)
     if not user:
-        raise HTTPException(401, "Authentication failed")
+        raise HTTPException(status_code=401, detail="Authentication failed")
     return user
-
 
 @app.post("/messages/fetch", response_model=list[schemas.MessageOut])
 def fetch_messages(msg: schemas.UserLogin):
     user = auth.authenticate_user(msg.username, msg.password)
     if not user:
-        raise HTTPException(401, "Authentication failed")
+        raise HTTPException(status_code=401, detail="Authentication failed")
     return crud.get_messages_for_user(user["id"])
 
 @app.post("/messages/send", response_model=schemas.MessageOut)
 def send_message(msg: schemas.MessageCreate):
     user = auth.authenticate_user(msg.username, msg.password)
     if not user:
-        raise HTTPException(401, "Authentication failed")
+        raise HTTPException(status_code=401, detail="Authentication failed")
     return crud.create_message(user["id"], msg)
