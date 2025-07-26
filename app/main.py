@@ -54,3 +54,12 @@ def send_message(msg: schemas.MessageCreate):
     if not user:
         raise HTTPException(status_code=401, detail="Authentication failed")
     return crud.create_message(user["id"], msg)
+@app.get("/users/search/{username}", response_model=schemas.UserOut)
+def search_user(username: str):
+    user = crud.get_user_by_username(username)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        "id": user["id"],
+        "username": user["username"]
+    }
