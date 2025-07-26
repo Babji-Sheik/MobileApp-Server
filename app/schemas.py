@@ -38,4 +38,5 @@ class MessageOut(BaseModel):
     delivered: bool
     read: bool
     from_username: str  # added sender's username
+    to_username: str
     class Config: orm_mode = True
