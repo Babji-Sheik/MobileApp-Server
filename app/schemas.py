@@ -37,4 +37,5 @@ class MessageOut(BaseModel):
     timestamp: datetime
     delivered: bool
     read: bool
+    from_username: str  # added sender's username
     class Config: orm_mode = True

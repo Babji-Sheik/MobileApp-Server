@@ -28,10 +28,10 @@ def health():
 
 @app.post("/signup", response_model=schemas.UserOut)
 def signup(user: schemas.UserCreate):
-    # Check for existing username
+    # Check if username already exists
     if crud.get_user_by_username(user.username):
         raise HTTPException(status_code=400, detail="Username already registered")
-    # Create new user
+    # Create and return new user
     return crud.create_user(user)
 
 @app.post("/login", response_model=schemas.UserOut)
